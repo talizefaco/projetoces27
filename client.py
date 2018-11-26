@@ -14,10 +14,15 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
 name = ""
 
+# Initial Localization
+#COLAR AQUI
+
 def send_message():
     while True:
         print("Localization")
         local = input() #NAO VAI SER INPUT, VAI SER A LOCALIZACAO
+        #CODIGO COM TEMPORIZACAO:
+        # é pra ser de tempos em tempos com local recebendo a localizacao depois de ter movimentado
         data = json.dumps({"type": "localization", "payload": {"source": id, "content": local}})
         s.send(data.encode("utf-8"))
 
