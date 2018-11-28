@@ -18,7 +18,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
 id = ""
 
-# Le arquivo txt e salva em uma matriz de char
+# Read map.txt and store it in a char matrix
 n_linhas = 40
 n_colunas = 120
 dim = (n_linhas, n_colunas)
@@ -38,7 +38,7 @@ with open("map.txt") as f:
             j = 0
 mapa = deepcopy(mapa_original)
 
-# Movimento aleatório do usuário
+# Random movement
 def movimenta(p):
     x = p[0]
     y = p[1]
@@ -61,19 +61,19 @@ def movimenta(p):
         if cont <= 2 and falhou == False:
             rnd = p[2]
         
-        #cima
+        #up
         if rnd < 0.25:
             if mapa_original[x-1][y] == b'0':
                 x = x - 1
-        #baixo
+        #down
         elif rnd < 0.5:
             if mapa_original[x+1][y] == b'0': 
                 x = x + 1
-        #esquerda
+        #left
         elif rnd < 0.75:
             if mapa_original[x][y-1] == b'0':
                 y = y - 1
-        #direita
+        #right
         else:
             if mapa_original[x][y+1] == b'0': 
                 y = y + 1
@@ -90,17 +90,18 @@ def send_localization():
         y0 = random.randint(0, n_colunas-1)
     p = (x0, y0, random.random())
 
-    #Manda a localizacao com o id e movimenta
+    # Send localization and id
+    # Move 
     while True:
         local = p
         p = movimenta(p)
         data = json.dumps({"type": "localization", "payload": {"source": id, "content": local}})
         s.send(data.encode("utf-8"))
-        print("Localization: ", local)
-        time.sleep(3)
+        print("My localization: ( x=", local[0], "; y=", local[1],")")
+        time.sleep(0.5)
         
-# Request an user ID (must be unique in the system)
-print("What ID do you want to use?")
+# Request an user ID (must be unique in the system, respecting the order)
+print("What is your ID? (Respecting the order)")
 while True:
     id = input()
     data = json.dumps({"type": "connection", "payload": {"id": id}})

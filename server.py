@@ -19,7 +19,7 @@ connections = {}
 # Clients position on map: (x,y,id). The id is a 'str'
 clientsPos = []
 
-# Le arquivo txt e salva em uma matriz de char
+# Read map.txt and store it in a char matrix
 n_linhas = 40
 n_colunas = 120
 dim = (n_linhas, n_colunas)
@@ -39,14 +39,14 @@ with open("map.txt") as f:
             j = 0
 mapa = deepcopy(mapa_original)
 
-# Matriz de inteiros que indica posicoes mais percorridas
+# Integer matrix that shows the most traveled positions
 mapaint = np.zeros(dim)
 for i in range(0, n_linhas):
     for j in range(0, n_colunas):
         if mapa_original[i][j] != b'0':
             mapaint[i][j] = -1
 
-# Acende um bloco de "n_em_volta" casas em todas as direções da posicao
+# A "n spots" block surrounding the client (in every direction) is lighted up
 def acende_luzes_em_volta(p, cont):
     global mapa
     if cont >= 1:
@@ -63,24 +63,25 @@ def acende_luzes_em_volta(p, cont):
             mapa[p[0]][p[1] + 1] = b'+'  
             acende_luzes_em_volta((p[0], p[1] + 1), cont - 1)
 
-# Acende o caminho mais percorrido a partir daquela posicao
+# Light up the most traveled route from that position
 def acende_luzes_caminho_otimizado(p, cont):
     global mapa
     global mapaint
+    #up
     sentido = "cima"
     maior = mapaint[p[0]-1][p[1]]
 
-    #baixo
+    #down
     if maior < mapaint[p[0]+1][p[1]]:
         sentido = "baixo"
         maior = mapaint[p[0]+1][p[1]]
 
-    #esquerda
+    #left
     if maior < mapaint[p[0]][p[1]-1]:
         sentido = "esquerda"
         maior = mapaint[p[0]][p[1]-1]
 
-    #direita
+    #right
     if maior < mapaint[p[0]][p[1]+1]:
         sentido = "direita"
         maior = mapaint[p[0]][p[1]+1]
@@ -103,12 +104,12 @@ def acende_luzes_caminho_otimizado(p, cont):
                 mapa[p[0]][p[1] + 1] = b'+'  
             acende_luzes_caminho_otimizado((p[0], p[1] + 1), cont - 1)
 
-# Reinicia o mapa
+# Restart map
 def reiniciar_mapa():
     global mapa
     mapa = deepcopy(mapa_original)
 
-# Print do mapa
+# Print map
 def print_map(matriz):
     for i in range (0, n_linhas):  
         for j in range (0, n_colunas):
@@ -124,12 +125,12 @@ def print_map(matriz):
                 print ("x", end = '')
         print() 
 
-# Atualiza mapaint
+# Update mapaint
 def atualiza_mapaint(p):
     global mapaint
     mapaint[p[0], p[1]] = mapaint[p[0], p[1]] + 1 
 
-# Ilumina mapa
+# Light up map
 def ilumina_mapa():
     global mapa
     for i in range(0, n_linhas):
@@ -139,7 +140,7 @@ def ilumina_mapa():
                 acende_luzes_em_volta(p, 4)
                 acende_luzes_caminho_otimizado(p, 10)
 
-# Rendimento em %
+# Efficiency (Rendimento) %
 def calcula_rendimento():
     global mapa
     total_luzes = 0
@@ -153,10 +154,20 @@ def calcula_rendimento():
                 total_luzes = total_luzes + 1
     return 100*(total_luzes-luzes_acesas)/total_luzes
 
-def seeClientsPos(nada,nada2):
+# Print clients on map
+def printClientsLocal(a,b):
     while True:
-        print(clientsPos)
-        time.sleep(0.5)
+        system('cls')
+        # Iterate on a structure that stores the position of each process and update the functions
+        for c in clientsPos:
+            p = (c[0],c[1],random.random())
+            atualiza_mapaint(p)
+            mapa[c[0]][c[1]] = 'P'
+        ilumina_mapa()
+        print_map(mapa)
+        print("Rendimento = ", "%.1f" % calcula_rendimento(), " % de economia")
+        reiniciar_mapa()    
+        time.sleep(0.05)
 
 def new_client(client, address):
     while True:
@@ -165,7 +176,6 @@ def new_client(client, address):
         if raw_data:
             # Decode the data
             data = json.loads(raw_data)
-            #print("SERVER >> Received:", data, "from", address)
 
             # If the data is of type connection, a client is requesting an ID
             # This verifies if the ID has been taken already and, if not, adds it
@@ -188,28 +198,10 @@ def new_client(client, address):
 
             # If the data is of type localization, a client is attempting to send his localization to the server.
             elif data["type"] == "localization":
-                #prints de testes
-                #print("recebi do id:", data["payload"]["source"])
-                #print("localizacao:", data["payload"]["content"])
-                #print(clientsPos)
-                #changeClientPos()
                 
-                # encontrar a posicao correspondente e mudar x,y
+                # Find corresponding position and change x,y
                 i = int(data["payload"]["source"]) - 1
                 clientsPos[i] = (data["payload"]["content"][0],data["payload"]["content"][1],data["payload"]["source"])
-                
-                # itera sobre uma lista que armazena a posicao de cada processo e atualiza todas essas funcoes:
-                #atualiza_mapaint(data["payload"]["content"])
-                #mapa[data["payload"]["content"][0]][data["payload"]["content"][1]] = 'P'
-                #ilumina_mapa()
-                #print_map(mapa)
-                #print("Rendimento = ", "%.1f" % calcula_rendimento(), " % de economia")
-                #reiniciar_mapa()    
-                #time.sleep(0.05)
-            
-            #PRA TIRAR O CLIENT:        
-            #del connections[data["payload"]["source"]]
-            #print("SERVER >> Removed", data["payload"]["source"], "from connections")
 
             # No other types of data are allowed! (should not happen)
             else:
@@ -224,8 +216,8 @@ s.bind((host,port))
 s.listen(backlog)
 print("SERVER >> Waiting for connections")
 
-# essa thread eh soh pra printar, pode apagar ela quando quiser!
-_thread.start_new_thread(seeClientsPos,(1,2))
+# Thread to print clients on map
+_thread.start_new_thread(printClientsLocal,(1,2))
 
 while True:
     client, address = s.accept()
