@@ -16,6 +16,9 @@ size = 1024
 # Connections dictionary: keys are user IDs, values are connections to clients
 connections = {}
 
+# Clients position on map: (x,y,id). The id is a 'str'
+clientsPos = []
+
 # Le arquivo txt e salva em uma matriz de char
 n_linhas = 40
 n_colunas = 120
@@ -150,14 +153,19 @@ def calcula_rendimento():
                 total_luzes = total_luzes + 1
     return 100*(total_luzes-luzes_acesas)/total_luzes
 
+def seeClientsPos(nada,nada2):
+    while True:
+        print(clientsPos)
+        time.sleep(0.5)
 
 def new_client(client, address):
     while True:
         raw_data = client.recv(size)
+        global clientsPos
         if raw_data:
             # Decode the data
             data = json.loads(raw_data)
-            ##print("SERVER >> Received:", data, "from", address)
+            #print("SERVER >> Received:", data, "from", address)
 
             # If the data is of type connection, a client is requesting an ID
             # This verifies if the ID has been taken already and, if not, adds it
@@ -171,6 +179,8 @@ def new_client(client, address):
                 else:
                     connections[data["payload"]["id"]] = client
                     response = {"type": "connection", "payload": {"status": "ok"}}
+                    # Create a element in clientsPos
+                    clientsPos.append((0,0,data["payload"]["id"]))
                     print("SERVER >> Request from", address, "granted")
                 response = json.dumps(response)
                 client.send(response.encode("utf-8"))
@@ -179,8 +189,15 @@ def new_client(client, address):
             # If the data is of type localization, a client is attempting to send his localization to the server.
             elif data["type"] == "localization":
                 #prints de testes
-                print("recebi do id:", data["payload"]["source"])
-                print("localizacao:", data["payload"]["content"])
+                #print("recebi do id:", data["payload"]["source"])
+                #print("localizacao:", data["payload"]["content"])
+                #print(clientsPos)
+                #changeClientPos()
+                
+                # encontrar a posicao correspondente e mudar x,y
+                i = int(data["payload"]["source"]) - 1
+                clientsPos[i] = (data["payload"]["content"][0],data["payload"]["content"][1],data["payload"]["source"])
+                
                 # itera sobre uma lista que armazena a posicao de cada processo e atualiza todas essas funcoes:
                 #atualiza_mapaint(data["payload"]["content"])
                 #mapa[data["payload"]["content"][0]][data["payload"]["content"][1]] = 'P'
@@ -206,6 +223,9 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((host,port))
 s.listen(backlog)
 print("SERVER >> Waiting for connections")
+
+# essa thread eh soh pra printar, pode apagar ela quando quiser!
+_thread.start_new_thread(seeClientsPos,(1,2))
 
 while True:
     client, address = s.accept()

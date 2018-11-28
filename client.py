@@ -92,12 +92,12 @@ def send_localization():
 
     #Manda a localizacao com o id e movimenta
     while True:
-        print("Localization")
         local = p
         p = movimenta(p)
         data = json.dumps({"type": "localization", "payload": {"source": id, "content": local}})
         s.send(data.encode("utf-8"))
-        time.sleep(0.05)
+        print("Localization: ", local)
+        time.sleep(3)
         
 # Request an user ID (must be unique in the system)
 print("What ID do you want to use?")
